@@ -93,8 +93,8 @@ const ball = {
     radius : 20,
     w : 40,
     h : 40,
-    velocityX : 5,
-    velocityY : 5,
+    vX : 5,
+    vY : 5,
     speed : 7,
     color : "WHITE"
 }
@@ -431,11 +431,42 @@ function drawArc(x, y, r, color){
     ctx.fill();
 }
 
+function getRandomInt(max) {
+    return Math.floor(Math.random() * max);
+}
+
+function getRandFloat(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return (Math.floor(Math.random() * (max - min + 1)) + min) /  10; //The maximum is inclusive and the minimum is inclusive 
+}
+
 // Reset ball if scoring
 function resetBall(){
     ball.x = canvas.width/2;
     ball.y = canvas.height/2;
-    ball.velocityX = -ball.velocityX;
+    ball.vX = -ball.vX;
+
+    // Random number
+    var randInt = getRandomInt(2);
+
+    // If random number true
+    if (randInt)
+    {
+        // Ball will go down
+        ball.vY = getRandomInt(2) + 5;
+    } else
+    {
+        // Ball will go up
+        ball.vY = -getRandomInt(2) + 5;
+    }
+
+    // Reverse Balls velocity
+    if (ball.vX > 0) {
+        ball.vX = 5;
+    } else {
+        ball.vX = -5;
+    }
     ball.speed = 7;
 }
 
@@ -483,6 +514,8 @@ document.addEventListener('keydown', (event)=> {
             user.score = 0;
             com.score = 0;
             resetBall();
+         } else {
+            user.SlashAttack();
          }
     }
  });
@@ -523,77 +556,35 @@ function UpdateAll(){
     
     // when the ball collides with bottom and top walls we inverse the y velocity.
     if(ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height){
-        ball.velocityY = -ball.velocityY;
         sWall.play();
+        ball.vY = -ball.vY;
     }
 
     // If collision happened between ball and Player
-    if  (checkCollision(ball.x-ball.radius, ball.y-ball.radius, ball.radius*2, ball.radius*2, user.x, user.y, user.w, user.h)) {
-
+    if  (checkCollision(ball.x-ball.radius, ball.y-ball.radius, ball.radius*2, ball.radius*2, user.x, user.y, user.width, user.height))
+    {
         // If player attacked
         if (user.attackTimer >= 16)
         {
             // play sound
             sHit.play();
 
-            let paddle = user;
-
-            // we check where the ball hits the paddle
-            let collidePoint = (ball.y - (paddle.y + paddle.height/2));
-            
-            // normalize the value of collidePoint, we need to get numbers between -1 and 1.
-            // -paddle.height/2 < collide Point < player.height/2
-            collidePoint = collidePoint / (paddle.height/2);
-            
-            // when the ball hits the top of a paddle we want the ball, to take a -45degees angle
-            // when the ball hits the center of the paddle we want the ball to take a 0degrees angle
-            // when the ball hits the bottom of the paddle we want the ball to take a 45degrees
-            // Math.PI/4 = 45degrees
-            let angleRad = (Math.PI/4) * collidePoint;
-            
-            // change the X and Y velocity direction
-            let direction = (ball.x + ball.radius < canvas.width/2) ? 1 : -1;
-
-            // Change velocity of Ball
-            ball.velocityX = direction * ball.speed * Math.cos(angleRad);
-            ball.velocityY = ball.speed * Math.sin(angleRad);
-
-            // speed up the ball everytime a paddle hits it.
-            ball.speed += 0.1;
+            // Bounce ball
+            ball.vX = -ball.vX * 1.25;
+            ball.x += 5;
+            //ball.speed += 0.1;
         }
     }
 
-    // If collision happened between ball and Player
+    // If collision happened between Ball and AI
     if  (checkCollision(ball.x-ball.radius, ball.y-ball.radius, ball.radius*2, ball.radius*2, com.x, com.y, com.width, com.height))
     {
-            // play sound
-            sHit.play();
+        // play sound
+        sHit.play();
 
-            let paddle = com;
-
-            // we check where the ball hits the paddle
-            let collidePoint = (ball.y - (paddle.y + paddle.height/2));
-            
-            // normalize the value of collidePoint, we need to get numbers between -1 and 1.
-            // -paddle.height/2 < collide Point < player.height/2
-            collidePoint = collidePoint / (paddle.height/2);
-            
-            // when the ball hits the top of a paddle we want the ball, to take a -45degees angle
-            // when the ball hits the center of the paddle we want the ball to take a 0degrees angle
-            // when the ball hits the bottom of the paddle we want the ball to take a 45degrees
-            // Math.PI/4 = 45degrees
-            let angleRad = (Math.PI/4) * collidePoint;
-            
-            // change the X and Y velocity direction
-            let direction = (ball.x + ball.radius < canvas.width/2) ? 1 : -1;
-
-            // Change velocity of Ball
-           // ball.velocityX = direction * ball.speed * Math.cos(angleRad);
-            ball.velocityX = -ball.velocityX;
-            ball.velocityY = ball.speed * Math.sin(angleRad);
-
-            // speed up the ball everytime a paddle hits it.
-            ball.speed += 0.1;
+        // Bounce ball
+        ball.vX = -ball.vX * 1.05;
+        //ball.speed += 0.1;
     }
 
     // Winner
@@ -605,12 +596,12 @@ function UpdateAll(){
     if (!gameover)
     {
         // the ball has a velocity
-        ball.x += ball.velocityX;
-        ball.y += ball.velocityY;
+        ball.x += ball.vX;
+        ball.y += ball.vY;
     
         // computer plays for itself, and we must be able to beat it
         // simple AI
-        com.y += ((ball.y - (com.y + com.height/2)))*0.1;
+        com.y += ((ball.y - (com.y + com.height/2)))*0.05;
     } 
     
     // There is a winner!
@@ -637,45 +628,45 @@ function RenderAll(){
     // clear the canvas
     drawRect(0, 0, canvas.width, canvas.height, "#000");
         
-        // draw the net
-        drawNet();
+    // draw the net
+    drawNet();
 
-        // Render Player Slash attack
-        if (user.sprite_index == 9 || user.sprite_index == 11) {
-            RenderImgClip(gPlayer, user.x, user.y, 62, user.h, rPlayer[user.sprite_index]);
-        } 
-        
-        // Render Walking
-        else {
-            RenderImgClip(gPlayer, user.x, user.y, user.w, user.h, rPlayer[user.sprite_index]);
-        }
-        
-        // Render AI
-        RenderImgClip(gPlayer, com.x, com.y, com.width, com.height, rPlayer[4]);
-        
-        // Render Ball
-        RenderImg(gBall, ball.x-ball.radius, ball.y-ball.radius, ball.radius*2, ball.radius*2);
+    // Render Player Slash attack
+    if (user.sprite_index == 9 || user.sprite_index == 11) {
+        RenderImgClip(gPlayer, user.x, user.y, 62, user.h, rPlayer[user.sprite_index]);
+    } 
+    
+    // Render Walking
+    else {
+        RenderImgClip(gPlayer, user.x, user.y, user.w, user.h, rPlayer[user.sprite_index]);
+    }
+    
+    // Render AI
+    RenderImgClip(gPlayer, com.x, com.y, com.width, com.height, rPlayer[4]);
+    
+    // Render Ball
+    RenderImg(gBall, ball.x-ball.radius, ball.y-ball.radius, ball.radius*2, ball.radius*2);
 
-        // Draw UI
-        {
-            // draw the user score to the left
-            drawText(user.score,canvas.width/4,canvas.height/5);
-            //drawText(user.score,canvas.width/4,canvas.height/5);
-            
-            // draw the COM score to the right
-            drawText(com.score,3*canvas.width/4,canvas.height/5);
+    // Draw UI
+    {
+        // draw the user score to the left
+        drawText(user.score,canvas.width/4,canvas.height/5);
+        //drawText(user.score,canvas.width/4,canvas.height/5);
+        
+        // draw the COM score to the right
+        drawText(com.score,3*canvas.width/4,canvas.height/5);
 
-            // Draw game over ctx
-            if (gameover) {
-                if (user.score >= winningScore) {
-                    drawText("Congrats, you win!", canvas.width/2, canvas.height * 0.75, "center");
-                }
-                if (com.score >= winningScore) {
-                    drawText("You lose, AI wins.", canvas.width/2, canvas.height * 0.75, "center");
-                }
-                drawText("Press 'Spacebar' to restart game.", canvas.width/2, canvas.height * 0.90, "center");
+        // Draw game over ctx
+        if (gameover) {
+            if (user.score >= winningScore) {
+                drawText("Congrats, you win!", canvas.width/2, canvas.height * 0.75, "center");
             }
+            if (com.score >= winningScore) {
+                drawText("You lose, AI wins.", canvas.width/2, canvas.height * 0.75, "center");
+            }
+            drawText("Press 'Spacebar' to restart game.", canvas.width/2, canvas.height * 0.90, "center");
         }
+    }
 }
 
 function game(){
