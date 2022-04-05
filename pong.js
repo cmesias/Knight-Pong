@@ -63,7 +63,7 @@ rPlayer[7] = new rClip(144,48,48,48);		 // Walking Reversed	    7
 
 rPlayer[8] = new rClip(0,96,48,48);			 // Before Slash 	        8
 rPlayer[9] = new rClip(48,96,64,48);		 // Slash attack 	        9
-
+ 
 rPlayer[10] = new rClip(0,144,48,48);		 // Before Slash Reversed 	10
 rPlayer[11] = new rClip(48,144,64,48);		 // Slash attack Reversed 	11
 
