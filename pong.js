@@ -84,7 +84,7 @@ sHit.src = "sounds/snd_hit.wav";
 
 // Global variables
 let gameover = false;
-const winningScore = 1;
+const winningScore = 7;
 
 // Ball object
 const ball = {
